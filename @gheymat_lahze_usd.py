@@ -17,7 +17,10 @@ def get_usd_farda_values():
         data = response.json()
         usd_farda_buy_value = data['p'].replace(',', '')  # Remove commas and convert to integer
         usd_farda_sell_value = data['h'].replace(',', '')  # Remove commas and convert to integer
-        return int(usd_farda_buy_value), int(usd_farda_sell_value)
+        date_time = data['t-g'].replace(',', '')  # Remove commas and convert to integer
+
+        print(data)
+        return int(usd_farda_buy_value), int(usd_farda_sell_value), date_time
     else:
         print("Failed to retrieve data from the API. Status code:", response.status_code)
         return None, None
@@ -37,14 +40,14 @@ def send_message(token, chat_id, text):
 
 if __name__ == "__main__":
     while True:
-        usd_farda_buy_value, usd_farda_sell_value = get_usd_farda_values()
-        if usd_farda_buy_value is not None and usd_farda_sell_value is not None:
+        usd_farda_buy_value, usd_farda_sell_value, date_time = get_usd_farda_values()
+        if usd_farda_buy_value is not None and usd_farda_sell_value is not None and date_time is not None:
 
             buy_message = f"فردایی تهران ⏳ {usd_farda_buy_value} :خرید 🟢"
             send_message(bot_token, channel_id, buy_message)
             
 
-            sell_message = f"فردایی تهران ⏳ {usd_farda_sell_value} :فروش 🔴"
+            sell_message = f"فردایی تهران ⏳ {usd_farda_sell_value} :فروش 🔴, {date_time}"
             send_message(bot_token, channel_id, sell_message)
         
         time.sleep(600)  # 10 دقیقس
