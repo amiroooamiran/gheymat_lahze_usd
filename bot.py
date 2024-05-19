@@ -44,6 +44,11 @@ def check_dollar_price():
             # Calculate the traded price as the average of the modified ceiling and floor prices
             traded_price = (price_ceiling + price_floor) // 2
 
+            # Increase prices by specified amounts
+            price_ceiling += 660
+            price_floor += 2500
+            traded_price += 1700
+
             market_open = is_market_open(time_of_dollar_english)
 
             # Format prices with commas
@@ -98,7 +103,7 @@ if __name__ == "__main__":
                 previous_market_open = False
             elif market_open:
                 message = (
-                    f"🔺 قیمت فروش: {price_ceiling} \n\n🔻 قیمت خرید: {price_floor} \n\n✔️ معامله شده: {traded_price}"
+                    f"🔺 قیمت فروش: {price_ceiling} \n\n🔻 قیمت خرید: {price_floor} \n\n✔️ معامله شده: {traded_price} \n⌛ {time_of_dollar}"
                 )
                 send_message(bot_token, channel_id, message)
-        time.sleep(5)
+        time.sleep(180)
