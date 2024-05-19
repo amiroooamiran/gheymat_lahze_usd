@@ -7,14 +7,12 @@ from playwright.sync_api import sync_playwright
 bot_token = "6703834100:AAEVs5ccc5Mjzg9rd3wHvlXEVlxW_VvZTyQ"
 channel_id = "@gheymat_lahze_usd"
 
-
 def is_market_open(persian_time_str):
     # Convert Persian time string to standard time
     persian_time = datetime.strptime(persian_time_str, "%H:%M:%S").time()
     market_open_time = datetime.strptime("07:00:00", "%H:%M:%S").time()
     market_close_time = datetime.strptime("19:00:00", "%H:%M:%S").time()
     return market_open_time <= persian_time <= market_close_time
-
 
 def check_dollar_price():
     with sync_playwright() as p:
@@ -66,11 +64,8 @@ def check_dollar_price():
         finally:
             browser.close()
 
-
 # Initialize previous market state
 previous_market_open = None
-market_closed_notified = False
-
 
 def send_message(token, chat_id, text):
     """Function to send a message via the Telegram bot."""
@@ -81,7 +76,6 @@ def send_message(token, chat_id, text):
         print(f"Failed to send message. Status code: {response.status_code}")
     else:
         print("Message sent successfully!")
-
 
 if __name__ == "__main__":
     while True:
@@ -94,20 +88,17 @@ if __name__ == "__main__":
             and price_floor is not None
             and traded_price is not None
         ):
-            if market_open and (
-                previous_market_open is None or not previous_market_open
-            ):
-                message = f"🔓 Market is now open. \n🔺 Ceiling price: {price_ceiling} \n🔻 Floor price: {price_floor} \n🔹 Traded price: {traded_price}  \n ⌛ Time: {time_of_dollar}"
+            if market_open and not previous_market_open:
+                message = f"شروع کار بازار 🔓"
                 send_message(bot_token, channel_id, message)
-            elif (
-                not market_open
-                and (previous_market_open is None or previous_market_open)
-                and not market_closed_notified
-            ):
-                message = "🔒 Market is now closed."
+                previous_market_open = True
+            elif not market_open and previous_market_open:
+                message = "پایان کار بازار 🔒"
                 send_message(bot_token, channel_id, message)
-                market_closed_notified = True
-            else:
-                message = f"🔺 Ceiling price: {price_ceiling} \n🔻 Floor price: {price_floor} \n🔹 Traded price: {traded_price} \n⌛ Time: {time_of_dollar}"
+                previous_market_open = False
+            elif market_open:
+                message = (
+                    f"🔺 قیمت فروش: {price_ceiling} \n\n🔻 قیمت خرید: {price_floor} \n\n✔️ معامله شده: {traded_price}"
+                )
                 send_message(bot_token, channel_id, message)
-        time.sleep(180)
+        time.sleep(5)
