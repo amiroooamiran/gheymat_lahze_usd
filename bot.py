@@ -3,23 +3,23 @@ import time
 import random
 from datetime import datetime
 from playwright.sync_api import sync_playwright
+import pytz
 
 bot_token = "6703834100:AAEVs5ccc5Mjzg9rd3wHvlXEVlxW_VvZTyQ"
 channel_id = "@gheymat_lahze_usd"
 
-def is_market_open(persian_time_str):
-    # Convert Persian time string to standard time
-    persian_time = datetime.strptime(persian_time_str, "%H:%M:%S").time()
-    market_open_time = datetime.strptime("07:00:00", "%H:%M:%S").time()
-    market_close_time = datetime.strptime("19:00:00", "%H:%M:%S").time()
-    return market_open_time <= persian_time <= market_close_time
+def is_market_open():
+    # Get current time in Iran timezone
+    tz = pytz.timezone('Asia/Tehran')
+    iran_time = datetime.now(tz)
+    # Check if current time is between 7 AM and 10 PM in Iran
+    return 7 <= iran_time.hour < 22
 
 def check_dollar_price():
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
         page.goto("https://mobinzar.com/priceable-object/dollar")
-
         try:
             dollar = page.locator(
                 "//div[contains(@class, 'flex items-center justify-center gap-1 w-full sm:w-[calc(100%-90px)]') and contains(@class, 'sm:rounded-md text-center sm:px-2 md:pt-1 h-6 leading-8 sm:leading-6 mx-0 sm:ms-2 text-sm sm::text-xl md:text-2xl font-bold')]"
@@ -45,11 +45,9 @@ def check_dollar_price():
             traded_price = (price_ceiling + price_floor) // 2
 
             # Increase prices by specified amounts
-            price_ceiling += 660
-            price_floor += 2500
-            traded_price += 1700
-
-            market_open = is_market_open(time_of_dollar_english)
+            price_ceiling += 0
+            price_floor += 0
+            traded_price += 0
 
             # Format prices with commas
             price_ceiling_str = f"{price_ceiling:,}"
@@ -61,16 +59,13 @@ def check_dollar_price():
                 price_floor_str,
                 traded_price_str,
                 time_of_dollar,
-                market_open,
             )
+
         except Exception as e:
             print(f"Error: {e}")
-            return None, None, None, None, None
+            return None, None, None, None
         finally:
             browser.close()
-
-# Initialize previous market state
-previous_market_open = None
 
 def send_message(token, chat_id, text):
     """Function to send a message via the Telegram bot."""
@@ -84,26 +79,11 @@ def send_message(token, chat_id, text):
 
 if __name__ == "__main__":
     while True:
-        price_ceiling, price_floor, traded_price, time_of_dollar, market_open = (
-            check_dollar_price()
-        )
-
-        if (
-            price_ceiling is not None
-            and price_floor is not None
-            and traded_price is not None
-        ):
-            if market_open and not previous_market_open:
-                message = f"شروع کار بازار 🔓"
-                send_message(bot_token, channel_id, message)
-                previous_market_open = True
-            elif not market_open and previous_market_open:
-                message = "پایان کار بازار 🔒"
-                send_message(bot_token, channel_id, message)
-                previous_market_open = False
-            elif market_open:
+        if is_market_open():
+            price_ceiling, price_floor, traded_price, time_of_dollar = check_dollar_price()
+            if price_ceiling is not None and price_floor is not None and traded_price is not None:
                 message = (
-                    f"🔺 قیمت فروش: {price_ceiling} \n\n🔻 قیمت خرید: {price_floor} \n\n✔️ معامله شده: {traded_price} \n⌛ {time_of_dollar}"
+                    f"🔺 قیمت فروش: {price_ceiling} \n\n🔻 قیمت خرید: {price_floor} \n\n✅ معامله شده: {traded_price} \n"
                 )
                 send_message(bot_token, channel_id, message)
         time.sleep(180)
