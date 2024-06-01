@@ -10,3 +10,4 @@ PySocks==1.7.1
 requests==2.31.0
 typing_extensions==4.11.0
 urllib3==2.2.1
+pytz
