@@ -77,13 +77,43 @@ def send_message(token, chat_id, text):
     else:
         print("Message sent successfully!")
 
+def send_start_end_messages(start=True):
+    """Send start or end message."""
+    price_ceiling, price_floor, traded_price, time_of_dollar = check_dollar_price()
+    if price_ceiling is not None and price_floor is not None and traded_price is not None:
+        if start:
+            message = f"شروع معاملات اولین معامله فردایی:\n\n🔴 قیمت فروش: {price_ceiling} \n\n🔵 قیمت خرید: {price_floor} \n\n✅ معامله شده: {traded_price} \n"
+        else:
+            message = f"پایان معاملات آخرین معامله فردایی:\n\n🔴 قیمت فروش: {price_ceiling} \n\n🔵 قیمت خرید: {price_floor} \n\n✅ معامله شده: {traded_price} \n"
+        send_message(bot_token, channel_id, message)
+
 if __name__ == "__main__":
+    sent_start_message = False
+    sent_end_message = False
+
     while True:
+        tz = pytz.timezone('Asia/Tehran')
+        iran_time = datetime.now(tz)
+
+        if iran_time.hour == 7 and not sent_start_message:
+            send_start_end_messages(start=True)
+            sent_start_message = True
+            sent_end_message = False  # Reset for the next day
+
+        if iran_time.hour == 22 and not sent_end_message:
+            send_start_end_messages(start=False)
+            sent_end_message = True
+            sent_start_message = False  # Reset for the next day
+
         if is_market_open():
             price_ceiling, price_floor, traded_price, time_of_dollar = check_dollar_price()
             if price_ceiling is not None and price_floor is not None and traded_price is not None:
-                message = (
-                    f"🔺 قیمت فروش: {price_ceiling} \n\n🔻 قیمت خرید: {price_floor} \n\n✅ معامله شده: {traded_price} \n"
-                )
-                send_message(bot_token, channel_id, message)
+                gh_froshe = f"🔴 قیمت فروش: {price_ceiling}"
+                gh_kharid = f"🔵 قیمت خرید: {price_floor}"
+                gh_moamle = f"✅ معامله شده: {traded_price}"
+
+                send_message(bot_token, channel_id, gh_froshe)
+                send_message(bot_token, channel_id, gh_kharid)
+                send_message(bot_token, channel_id, gh_moamle)
+
         time.sleep(180)
